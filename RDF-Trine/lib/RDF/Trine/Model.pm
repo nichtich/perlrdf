@@ -7,7 +7,7 @@ RDF::Trine::Model - Model class
 
 =head1 VERSION
 
-This document describes RDF::Trine::Model version 0.135
+This document describes RDF::Trine::Model version 0.136
 
 =head1 METHODS
 
@@ -23,7 +23,7 @@ no warnings 'redefine';
 
 our ($VERSION);
 BEGIN {
-	$VERSION	= '0.135';
+	$VERSION	= '0.136';
 }
 
 use Scalar::Util qw(blessed);
@@ -33,7 +33,7 @@ use RDF::Trine::Error qw(:try);
 use RDF::Trine qw(variable);
 use RDF::Trine::Node;
 use RDF::Trine::Pattern;
-use RDF::Trine::Store::DBI;
+use RDF::Trine::Store;
 use RDF::Trine::Model::Dataset;
 
 =item C<< new ( $store ) >>
@@ -465,6 +465,17 @@ the underlying store).
 sub get_statements {
 	my $self	= shift;
 	$self->end_bulk_ops();
+	
+	my @pos	= qw(subject predicate object graph);
+	foreach my $i (0 .. $#_) {
+		my $n	= $_[$i];
+		next unless defined($n);	# undef is OK
+		next if (blessed($n) and $n->isa('RDF::Trine::Node'));	# node objects are OK
+		my $pos	= $pos[$i];
+		local($Data::Dumper::Indent)	= 0;
+		my $ser	= Data::Dumper->Dump([$n], [$pos]);
+		throw RDF::Trine::Error::MethodInvocationError -text => "get_statements called with a value that isn't undef or a node object: $ser";
+	}
 	
 	if (scalar(@_) >= 4) {
 		my $graph	= $_[3];
